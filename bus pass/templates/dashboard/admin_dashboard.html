@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Bus Pass Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">Bus Pass Management</div>
+        <div class="nav-links">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="dashboard admin-dashboard">
+            <h2>Admin Dashboard</h2>
+            
+            <section class="users-section">
+                <h3>Manage Users</h3>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Active Passes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                                <tr>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.passes|length if user.passes else 0 }}</td>
+                                    <td>
+                                        <button class="btn secondary btn-sm" onclick="viewUserPasses({{ user.id }})">View Passes</button>
+                                        {% if not user.is_admin %}
+                                            <button class="btn danger btn-sm" onclick="deactivateUser({{ user.id }})">Deactivate</button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="passes-section">
+                <h3>Recent Pass Applications</h3>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Pass Number</th>
+                                <th>User</th>
+                                <th>Issue Date</th>
+                                <th>Expiry Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pass in passes %}
+                                <tr>
+                                    <td>{{ pass.pass_number }}</td>
+                                    <td>{{ pass.owner.username }}</td>
+                                    <td>{{ pass.issue_date.strftime('%Y-%m-%d') if pass.issue_date else 'N/A' }}</td>
+                                    <td>{{ pass.expiry_date.strftime('%Y-%m-%d') if pass.expiry_date else 'N/A' }}</td>
+                                    <td>{{ pass.status if pass.status else 'N/A' }}</td>
+                                    <td>
+                                        {% if pass.status == 'pending' %}
+                                            <button class="btn success btn-sm" onclick="approvePass({{ pass.id }})">Approve</button>
+                                            <button class="btn danger btn-sm" onclick="rejectPass({{ pass.id }})">Reject</button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        function viewUserPasses(userId) {
+            window.location.href = `/admin/user/${userId}/passes`;
+        }
+
+        function deactivateUser(userId) {
+            if (confirm('Are you sure you want to deactivate this user?')) {
+                fetch(`/admin/user/${userId}/deactivate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message || 'An error occurred');
+                    }
+                });
+            }
+        }
+
+        function approvePass(passId) {
+            fetch(`/admin/pass/${passId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'An error occurred');
+                }
+            });
+        }
+
+        function rejectPass(passId) {
+            if (confirm('Are you sure you want to reject this pass application?')) {
+                fetch(`/admin/pass/${passId}/reject`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message || 'An error occurred');
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard - Bus Pass Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">Bus Pass Management</div>
+        <div class="nav-links">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="dashboard">
+            <h2>Welcome, {{ current_user.username }}!</h2>
+            
+            <section class="passes-section">
+                <h3>My Bus Passes</h3>
+                {% if passes %}
+                    <div class="passes-grid">
+                        {% for pass in passes %}
+                            <div class="pass-card">
+                                <div class="pass-header">
+                                    <h4>Pass #{{ pass.pass_number }}</h4>
+                                    <span class="pass-status" data-expiry="{{ pass.expiry_date }}">{{ pass.status }}</span>
+                                </div>
+                                <div class="pass-details">
+                                    <p><strong>Issue Date:</strong> {{ pass.issue_date.strftime('%Y-%m-%d') }}</p>
+                                    <p><strong>Expiry Date:</strong> {{ pass.expiry_date.strftime('%Y-%m-%d') }}</p>
+                                </div>
+                                {% if pass.status == 'active' %}
+                                    <a href="{{ url_for('download_pass', pass_id=pass.id) }}" class="btn secondary">Download Pass</a>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>You don't have any bus passes yet.</p>
+                {% endif %}
+            </section>
+
+            <section class="apply-section">
+                <h3>Apply for New Pass</h3>
+                <form method="POST" action="{{ url_for('apply_pass') }}" class="apply-form">
+                    <div class="form-group">
+                        <label for="pass_type">Pass Type</label>
+                        <select id="pass_type" name="pass_type" class="form-control" required>
+                            <option value="monthly">Monthly Pass</option>
+                            <option value="quarterly">Quarterly Pass</option>
+                            <option value="yearly">Yearly Pass</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn primary">Apply for Pass</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
